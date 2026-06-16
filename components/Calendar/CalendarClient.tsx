@@ -253,8 +253,8 @@ function WeekView({ currentDate, events, isDragging, onDayClick, onEventClick, o
                   style={{
                     top: topPx,
                     height: heightPx,
-                    left: `calc(${HOUR_COL_WIDTH}px + ${di} * ((100% - ${HOUR_COL_WIDTH}px) / 7))`,
-                    width: `calc((100% - ${HOUR_COL_WIDTH}px) / 7 - 2px)`,
+                    left: `calc(${HOUR_COL_WIDTH}px + ${di} * ((100% - ${HOUR_COL_WIDTH}px) / 7) + 1px)`,
+                    width: `calc((100% - ${HOUR_COL_WIDTH}px) / 7)`,
                     ...(color ? { backgroundColor: color } : {})
                   }}
                 >
