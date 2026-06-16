@@ -419,5 +419,3 @@ function EventForm({ date, event, subjects, onClose, onSaved }: { date: Date; ev
   )
 }
 
-import { useState } from 'react'
-// Tue Jun 16 16:17:06 UTC 2026
