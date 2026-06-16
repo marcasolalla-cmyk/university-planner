@@ -213,8 +213,7 @@ function WeekView({ currentDate, events, isDragging, onDayClick, onEventClick, o
 
   return (
     <div className="card p-0 overflow-hidden">
-      <div className="flex border-b border-border">
-        <div style={{ width: HOUR_COL_WIDTH, minWidth: HOUR_COL_WIDTH }} />
+      <div className="flex border-b border-border" style={{ paddingLeft: HOUR_COL_WIDTH }}>
         {days.map((day, i) => {
           const isToday = isSameDay(day, new Date())
           return (
