@@ -2,10 +2,12 @@ import { redirect } from 'next/navigation'
 import { createServerClient } from '@/lib/supabase-server'
 import CalendarClient from '@/components/Calendar/CalendarClient'
 
+export const dynamic = 'force-dynamic'
+
 export default async function CalendarPage() {
   const supabase = await createServerClient()
-  const { data: { session } } = await supabase.auth.getSession()
-  if (!session) redirect('/login')
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) redirect('/login')
 
   const now = new Date()
   const start = new Date(now.getFullYear(), now.getMonth() - 1, 1).toISOString()
