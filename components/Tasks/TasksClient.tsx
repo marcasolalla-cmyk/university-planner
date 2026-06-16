@@ -3,12 +3,37 @@
 import { useState } from 'react'
 import { format } from 'date-fns'
 import { es } from 'date-fns/locale'
-import { Plus, X, ChevronDown, ChevronRight, Check, Clock } from 'lucide-react'
+import { Plus, X, ChevronDown, ChevronRight, Check, Clock, Flame } from 'lucide-react'
 import { createClient } from '@/lib/supabase'
 import type { Task, Subtask, Subject } from '@/lib/types'
 import { getPriorityColor } from '@/lib/utils'
 
 interface Props { tasks: Task[]; subjects: Subject[] }
+
+function getDifficultyLabel(d: number) {
+  const labels = ['', 'Muy fácil', 'Fácil', 'Normal', 'Difícil', 'Muy difícil']
+  return labels[d] || 'Normal'
+}
+
+function getDifficultyColor(d: number) {
+  const colors = ['', 'text-green-400', 'text-blue-400', 'text-yellow-400', 'text-orange-400', 'text-red-400']
+  return colors[d] || 'text-yellow-400'
+}
+
+function getSmartScore(task: Task): number {
+  const difficulty = (task as any).difficulty || 3
+  const now = new Date()
+  let urgency = 0
+  if (task.due_date) {
+    const daysLeft = (new Date(task.due_date).getTime() - now.getTime()) / (1000 * 60 * 60 * 24)
+    if (daysLeft < 0) urgency = 100
+    else if (daysLeft < 1) urgency = 50
+    else if (daysLeft < 3) urgency = 30
+    else if (daysLeft < 7) urgency = 15
+    else urgency = 5
+  }
+  return difficulty * 20 + urgency
+}
 
 export default function TasksClient({ tasks: initialTasks, subjects }: Props) {
   const [tasks, setTasks] = useState<Task[]>(initialTasks)
@@ -16,6 +41,7 @@ export default function TasksClient({ tasks: initialTasks, subjects }: Props) {
   const [editingTask, setEditingTask] = useState<Task | null>(null)
   const [filter, setFilter] = useState<'all' | 'pending' | 'completed'>('pending')
   const [filterSubject, setFilterSubject] = useState('')
+  const [sortMode, setSortMode] = useState<'smart' | 'date' | 'priority'>('smart')
   const supabase = createClient()
 
   const refresh = async () => {
@@ -38,10 +64,21 @@ export default function TasksClient({ tasks: initialTasks, subjects }: Props) {
     if (filter === 'completed' && !t.completed) return false
     if (filterSubject && t.subject_id !== filterSubject) return false
     return true
+  }).sort((a, b) => {
+    if (sortMode === 'smart') return getSmartScore(b) - getSmartScore(a)
+    if (sortMode === 'date') {
+      if (!a.due_date) return 1
+      if (!b.due_date) return -1
+      return new Date(a.due_date).getTime() - new Date(b.due_date).getTime()
+    }
+    const p: Record<string, number> = { alta: 3, media: 2, baja: 1 }
+    return (p[b.priority] || 0) - (p[a.priority] || 0)
   })
 
   const pending = tasks.filter(t => !t.completed)
   const completed = tasks.filter(t => t.completed)
+
+  const topTask = filter === 'pending' && sortMode === 'smart' && filtered[0]
 
   return (
     <div className="p-6 max-w-4xl mx-auto space-y-6">
@@ -53,11 +90,32 @@ export default function TasksClient({ tasks: initialTasks, subjects }: Props) {
         <button onClick={() => { setEditingTask(null); setShowForm(true) }} className="btn-primary flex items-center gap-2 text-sm"><Plus className="w-4 h-4" />Nueva tarea</button>
       </div>
 
+      {topTask && (
+        <div className="bg-primary/10 border border-primary/20 rounded-xl p-4 flex items-start gap-3">
+          <Flame className="w-5 h-5 text-primary shrink-0 mt-0.5" />
+          <div>
+            <p className="font-medium text-primary">Recomendación: empieza por esta</p>
+            <p className="text-sm text-foreground mt-0.5">{topTask.title}</p>
+            <p className="text-xs text-muted-foreground mt-1">
+              Dificultad: {getDifficultyLabel((topTask as any).difficulty || 3)}
+              {topTask.due_date && ` · Vence ${format(new Date(topTask.due_date), "d MMM", { locale: es })}`}
+            </p>
+          </div>
+        </div>
+      )}
+
       <div className="flex flex-wrap gap-3">
         <div className="bg-secondary rounded-lg p-1 flex">
           {(['all', 'pending', 'completed'] as const).map(f => (
             <button key={f} onClick={() => setFilter(f)} className={`px-3 py-1.5 rounded text-sm font-medium transition-colors ${filter === f ? 'bg-primary text-white' : 'text-muted-foreground hover:text-foreground'}`}>
               {f === 'all' ? 'Todas' : f === 'pending' ? 'Pendientes' : 'Completadas'}
+            </button>
+          ))}
+        </div>
+        <div className="bg-secondary rounded-lg p-1 flex">
+          {([['smart', '🧠 Inteligente'], ['date', '📅 Fecha'], ['priority', '⚡ Prioridad']] as const).map(([mode, label]) => (
+            <button key={mode} onClick={() => setSortMode(mode)} className={`px-3 py-1.5 rounded text-sm font-medium transition-colors ${sortMode === mode ? 'bg-primary text-white' : 'text-muted-foreground hover:text-foreground'}`}>
+              {label}
             </button>
           ))}
         </div>
@@ -90,6 +148,7 @@ function TaskCard({ task, onToggle, onEdit, onToggleSubtask }: { task: Task; onT
   const overdue = !task.completed && task.due_date && new Date(task.due_date) < new Date()
   const subtasks = task.subtasks || []
   const completedSubs = subtasks.filter(s => s.completed).length
+  const difficulty = (task as any).difficulty || 3
 
   return (
     <div className={`card space-y-2 ${task.completed ? 'opacity-60' : ''}`}>
@@ -112,6 +171,9 @@ function TaskCard({ task, onToggle, onEdit, onToggleSubtask }: { task: Task; onT
               </span>
             )}
             <span className={`badge ${getPriorityColor(task.priority)}`}>{task.priority}</span>
+            <span className={`text-xs font-medium ${getDifficultyColor(difficulty)}`}>
+              {'●'.repeat(difficulty)}{'○'.repeat(5 - difficulty)} {getDifficultyLabel(difficulty)}
+            </span>
             {task.subject && (
               <span className="flex items-center gap-1 text-xs text-muted-foreground">
                 <div className="w-2 h-2 rounded-full" style={{ backgroundColor: task.subject.color }} />
@@ -152,6 +214,7 @@ function TaskForm({ task, subjects, onClose, onSaved }: { task: Task | null; sub
     title: task?.title || '',
     description: task?.description || '',
     priority: task?.priority || 'media',
+    difficulty: (task as any)?.difficulty || 3,
     due_date: task?.due_date ? format(new Date(task.due_date), "yyyy-MM-dd'T'HH:mm") : '',
     subject_id: task?.subject_id || '',
   })
@@ -200,6 +263,13 @@ function TaskForm({ task, subjects, onClose, onSaved }: { task: Task | null; sub
             </div>
             <div><label className="label">Fecha límite</label><input type="datetime-local" className="input" value={form.due_date} onChange={e => setForm(f => ({ ...f, due_date: e.target.value }))} /></div>
           </div>
+          <div>
+            <label className="label">Dificultad / Carga de trabajo: <span className={`font-bold ${getDifficultyColor(form.difficulty)}`}>{getDifficultyLabel(form.difficulty)}</span></label>
+            <input type="range" min={1} max={5} value={form.difficulty} onChange={e => setForm(f => ({ ...f, difficulty: parseInt(e.target.value) }))} className="w-full accent-primary" />
+            <div className="flex justify-between text-xs text-muted-foreground mt-1">
+              <span>Muy fácil</span><span>Fácil</span><span>Normal</span><span>Difícil</span><span>Muy difícil</span>
+            </div>
+          </div>
           <div><label className="label">Asignatura</label>
             <select className="input" value={form.subject_id} onChange={e => setForm(f => ({ ...f, subject_id: e.target.value }))}>
               <option value="">Sin asignatura</option>
@@ -229,4 +299,14 @@ function TaskForm({ task, subjects, onClose, onSaved }: { task: Task | null; sub
       </div>
     </div>
   )
+}
+
+function getDifficultyLabel(d: number) {
+  const labels = ['', 'Muy fácil', 'Fácil', 'Normal', 'Difícil', 'Muy difícil']
+  return labels[d] || 'Normal'
+}
+
+function getDifficultyColor(d: number) {
+  const colors = ['', 'text-green-400', 'text-blue-400', 'text-yellow-400', 'text-orange-400', 'text-red-400']
+  return colors[d] || 'text-yellow-400'
 }
