@@ -218,7 +218,7 @@ function WeekView({ currentDate, events, isDragging, onDayClick, onEventClick, o
         {days.map((day, i) => {
           const isToday = isSameDay(day, new Date())
           return (
-            <div key={i} onDoubleClick={() => onDayClick2(day)} className="flex-1 p-1.5 text-center border-l border-border cursor-pointer hover:bg-accent/30">
+            <div key={i} onDoubleClick={() => onDayClick2(day)} className="flex-1 p-1.5 text-center border-l border-border cursor-pointer hover:bg-accent/30" style={{ boxSizing: "border-box" }}>
               <div className="text-xs text-muted-foreground capitalize">{format(day, 'EEE', { locale: es })}</div>
               <div className={`text-sm font-medium mt-0.5 w-6 h-6 flex items-center justify-center rounded-full mx-auto ${isToday ? 'bg-primary text-white' : 'text-foreground'}`}>{format(day, 'd')}</div>
             </div>
@@ -230,7 +230,7 @@ function WeekView({ currentDate, events, isDragging, onDayClick, onEventClick, o
           {hours.map(hour => (
             <div key={hour} className="absolute w-full flex border-t border-border/30" style={{ top: hour * HOUR_HEIGHT, height: HOUR_HEIGHT }}>
               <div className="shrink-0 text-xs text-muted-foreground text-right pr-2 pt-1" style={{ width: HOUR_COL_WIDTH }}>{hour}:00</div>
-              <div className="flex-1 grid grid-cols-7 h-full">
+              <div className="flex-1 grid grid-cols-7 h-full" style={{ marginLeft: 0 }}>
                 {days.map((day, i) => (
                   <div key={i} onClick={() => { const d = new Date(day); d.setHours(hour); if (!isDragging.current) onDayClick(d) }} className="border-l border-border/30 hover:bg-accent/10 cursor-pointer h-full" />
                 ))}
