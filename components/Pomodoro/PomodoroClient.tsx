@@ -133,7 +133,7 @@ export default function PomodoroClient({ sessions: initialSessions, subjects }: 
               <BarChart data={last7}>
                 <XAxis dataKey="day" tick={{ fontSize: 11, fill: 'hsl(var(--muted-foreground))' }} />
                 <YAxis tick={{ fontSize: 11, fill: 'hsl(var(--muted-foreground))' }} />
-                <Tooltip formatter={(v: number) => [`${v}h`, 'Horas']} contentStyle={{ background: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', borderRadius: '8px', color: 'hsl(var(--foreground))' }} />
+                <Tooltip formatter={(v: any) => [`${Number(v)}h`, 'Horas']} contentStyle={{ background: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', borderRadius: '8px', color: 'hsl(var(--foreground))' }} />
                 <Bar dataKey="horas" fill="hsl(var(--primary))" radius={[3, 3, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>

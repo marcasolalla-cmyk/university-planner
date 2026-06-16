@@ -73,7 +73,7 @@ export default function GradesClient({ grades: initialGrades, subjects: initialS
               <BarChart data={chartData}>
                 <XAxis dataKey="name" tick={{ fontSize: 11, fill: 'hsl(var(--muted-foreground))' }} />
                 <YAxis domain={[0, 10]} tick={{ fontSize: 11, fill: 'hsl(var(--muted-foreground))' }} />
-                <Tooltip formatter={(v: number) => [v.toFixed(2), 'Nota']} contentStyle={{ background: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', borderRadius: '8px', color: 'hsl(var(--foreground))' }} />
+                <Tooltip formatter={(v: any) => [Number(v).toFixed(2), 'Nota']} contentStyle={{ background: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', borderRadius: '8px', color: 'hsl(var(--foreground))' }} />
                 <Bar dataKey="nota" radius={[4, 4, 0, 0]}>
                   {chartData.map((entry, i) => <Cell key={i} fill={entry.color} />)}
                 </Bar>
