@@ -209,15 +209,16 @@ function WeekView({ currentDate, events, isDragging, onDayClick, onEventClick, o
   const days = Array.from({ length: 7 }, (_, i) => addDays(weekStart, i))
   const hours = Array.from({ length: 24 }, (_, i) => i)
   const HOUR_HEIGHT = 56
+  const HOUR_COL_WIDTH = 48
 
   return (
     <div className="card p-0 overflow-hidden">
-      <div className="grid grid-cols-8 border-b border-border">
-        <div className="w-16 shrink-0" />
+      <div className="flex border-b border-border">
+        <div style={{ width: HOUR_COL_WIDTH, minWidth: HOUR_COL_WIDTH }} />
         {days.map((day, i) => {
           const isToday = isSameDay(day, new Date())
           return (
-            <div key={i} onDoubleClick={() => onDayClick2(day)} className="p-1.5 text-center border-l border-border cursor-pointer hover:bg-accent/30">
+            <div key={i} onDoubleClick={() => onDayClick2(day)} className="flex-1 p-1.5 text-center border-l border-border cursor-pointer hover:bg-accent/30">
               <div className="text-xs text-muted-foreground capitalize">{format(day, 'EEE', { locale: es })}</div>
               <div className={`text-sm font-medium mt-0.5 w-6 h-6 flex items-center justify-center rounded-full mx-auto ${isToday ? 'bg-primary text-white' : 'text-foreground'}`}>{format(day, 'd')}</div>
             </div>
@@ -227,11 +228,11 @@ function WeekView({ currentDate, events, isDragging, onDayClick, onEventClick, o
       <div className="overflow-y-auto" style={{ maxHeight: 'calc(100vh - 260px)' }}>
         <div className="relative" style={{ height: HOUR_HEIGHT * 24 }}>
           {hours.map(hour => (
-            <div key={hour} className="absolute w-full flex" style={{ top: hour * HOUR_HEIGHT, height: HOUR_HEIGHT }}>
-              <div className="w-16 shrink-0 text-xs text-muted-foreground text-right pr-2 pt-1">{hour}:00</div>
-              <div className="flex-1 border-t border-border/30 grid grid-cols-7">
+            <div key={hour} className="absolute w-full flex border-t border-border/30" style={{ top: hour * HOUR_HEIGHT, height: HOUR_HEIGHT }}>
+              <div className="shrink-0 text-xs text-muted-foreground text-right pr-2 pt-1" style={{ width: HOUR_COL_WIDTH }}>{hour}:00</div>
+              <div className="flex-1 grid grid-cols-7 h-full">
                 {days.map((day, i) => (
-                  <div key={i} onClick={() => { const d = new Date(day); d.setHours(hour); if (!isDragging.current) onDayClick(d) }} className="border-l border-border/30 hover:bg-accent/10 cursor-pointer" />
+                  <div key={i} onClick={() => { const d = new Date(day); d.setHours(hour); if (!isDragging.current) onDayClick(d) }} className="border-l border-border/30 hover:bg-accent/10 cursor-pointer h-full" />
                 ))}
               </div>
             </div>
@@ -246,11 +247,16 @@ function WeekView({ currentDate, events, isDragging, onDayClick, onEventClick, o
               const topPx = startH * HOUR_HEIGHT
               const heightPx = Math.max((endH - startH) * HOUR_HEIGHT, 20)
               const color = getEventColor(event)
-              const colWidth = 100 / 7
               return (
                 <div key={event.id} onClick={ev => { ev.stopPropagation(); onEventClick(event, ev) }}
                   className={`absolute rounded text-white text-xs px-1 py-0.5 cursor-pointer hover:opacity-80 overflow-hidden ${!color ? getEventTypeColor(event.type) : ''}`}
-                  style={{ top: topPx, height: heightPx, left: `calc(64px + ${di} * ((100% - 64px) / 7))`, width: `calc((100% - 64px) / 7 - 4px)`, ...(color ? { backgroundColor: color } : {}) }}
+                  style={{
+                    top: topPx,
+                    height: heightPx,
+                    left: `calc(${HOUR_COL_WIDTH}px + ${di} * ((100% - ${HOUR_COL_WIDTH}px) / 7))`,
+                    width: `calc((100% - ${HOUR_COL_WIDTH}px) / 7 - 2px)`,
+                    ...(color ? { backgroundColor: color } : {})
+                  }}
                 >
                   <div className="font-medium truncate" style={{ fontSize: '10px' }}>{event.title}</div>
                   {heightPx > 30 && <div className="opacity-75" style={{ fontSize: '9px' }}>{format(start, 'HH:mm')} – {format(end, 'HH:mm')}</div>}
