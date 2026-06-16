@@ -250,7 +250,7 @@ function WeekView({ currentDate, events, isDragging, onDayClick, onEventClick, o
               return (
                 <div key={event.id} onClick={ev => { ev.stopPropagation(); onEventClick(event, ev) }}
                   className={`absolute rounded text-white text-xs px-1 py-0.5 cursor-pointer hover:opacity-80 overflow-hidden ${!color ? getEventTypeColor(event.type) : ''}`}
-                  style={{ top: topPx, height: heightPx, left: `calc(${di * colWidth}% + 48px)`, width: `calc(${colWidth}% - 4px)`, ...(color ? { backgroundColor: color } : {}) }}
+                  style={{ top: topPx, height: heightPx, left: `calc(48px + ${di} * ((100% - 48px) / 7))`, width: `calc((100% - 48px) / 7 - 4px)`, ...(color ? { backgroundColor: color } : {}) }}
                 >
                   <div className="font-medium truncate" style={{ fontSize: '10px' }}>{event.title}</div>
                   {heightPx > 30 && <div className="opacity-75" style={{ fontSize: '9px' }}>{format(start, 'HH:mm')} – {format(end, 'HH:mm')}</div>}
