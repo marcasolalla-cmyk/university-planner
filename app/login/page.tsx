@@ -32,7 +32,7 @@ export default function LoginPage() {
     await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
-        redirectTo: `https://ubiquitous-space-enigma-5vg7q97w46p4fvv9r-3000.app.github.dev/login`,
+        redirectTo: `https://university-planner-marcasolalla-cmyk1.vercel.app/login`,
       },
     })
   }
