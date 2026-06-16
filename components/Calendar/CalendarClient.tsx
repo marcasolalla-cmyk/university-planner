@@ -213,7 +213,7 @@ function WeekView({ currentDate, events, isDragging, onDayClick, onEventClick, o
   return (
     <div className="card p-0 overflow-hidden">
       <div className="grid grid-cols-8 border-b border-border">
-        <div className="p-2" />
+        <div className="w-16 shrink-0" />
         {days.map((day, i) => {
           const isToday = isSameDay(day, new Date())
           return (
@@ -228,7 +228,7 @@ function WeekView({ currentDate, events, isDragging, onDayClick, onEventClick, o
         <div className="relative" style={{ height: HOUR_HEIGHT * 24 }}>
           {hours.map(hour => (
             <div key={hour} className="absolute w-full flex" style={{ top: hour * HOUR_HEIGHT, height: HOUR_HEIGHT }}>
-              <div className="w-12 shrink-0 text-xs text-muted-foreground text-right pr-2 pt-1">{hour}:00</div>
+              <div className="w-16 shrink-0 text-xs text-muted-foreground text-right pr-2 pt-1">{hour}:00</div>
               <div className="flex-1 border-t border-border/30 grid grid-cols-7">
                 {days.map((day, i) => (
                   <div key={i} onClick={() => { const d = new Date(day); d.setHours(hour); if (!isDragging.current) onDayClick(d) }} className="border-l border-border/30 hover:bg-accent/10 cursor-pointer" />
@@ -250,7 +250,7 @@ function WeekView({ currentDate, events, isDragging, onDayClick, onEventClick, o
               return (
                 <div key={event.id} onClick={ev => { ev.stopPropagation(); onEventClick(event, ev) }}
                   className={`absolute rounded text-white text-xs px-1 py-0.5 cursor-pointer hover:opacity-80 overflow-hidden ${!color ? getEventTypeColor(event.type) : ''}`}
-                  style={{ top: topPx, height: heightPx, left: `calc(48px + ${di} * ((100% - 48px) / 7))`, width: `calc((100% - 48px) / 7 - 4px)`, ...(color ? { backgroundColor: color } : {}) }}
+                  style={{ top: topPx, height: heightPx, left: `calc(64px + ${di} * ((100% - 64px) / 7))`, width: `calc((100% - 64px) / 7 - 4px)`, ...(color ? { backgroundColor: color } : {}) }}
                 >
                   <div className="font-medium truncate" style={{ fontSize: '10px' }}>{event.title}</div>
                   {heightPx > 30 && <div className="opacity-75" style={{ fontSize: '9px' }}>{format(start, 'HH:mm')} – {format(end, 'HH:mm')}</div>}
