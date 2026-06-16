@@ -5,7 +5,7 @@ import { usePathname, useRouter } from 'next/navigation'
 import { useState } from 'react'
 import {
   LayoutDashboard, Calendar, CheckSquare, GraduationCap,
-  Timer, Bot, Calculator, Sun, Moon, LogOut, Menu, X, BookOpen
+  Timer, Bot, Calculator, GraduationCap, Sun, Moon, LogOut, Menu, X, BookOpen
 } from 'lucide-react'
 import { useTheme } from 'next-themes'
 import { createClient } from '@/lib/supabase'
@@ -15,10 +15,11 @@ const navItems = [
   { href: '/', label: 'Dashboard', icon: LayoutDashboard },
   { href: '/calendar', label: 'Calendario', icon: Calendar },
   { href: '/tasks', label: 'Tareas', icon: CheckSquare },
+  { href: '/grades', label: 'Asignaturas', icon: GraduationCap },
   { href: '/planning', label: 'Planificación', icon: BookOpen },
-  { href: '/pomodoro', label: "Estudio", icon: Timer },
-  { href: '/ai', label: 'Asistente IA', icon: Bot },
+  { href: '/pomodoro', label: 'Estudio', icon: Timer },
   { href: '/notacorte', label: 'Nota de corte', icon: Calculator },
+  { href: '/ai', label: 'Asistente IA', icon: Bot },
 ]
 
 export default function Sidebar({ user }: { user: User }) {
