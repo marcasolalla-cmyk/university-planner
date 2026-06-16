@@ -16,7 +16,6 @@ const navItems = [
   { href: '/calendar', label: 'Calendario', icon: Calendar },
   { href: '/tasks', label: 'Tareas', icon: CheckSquare },
   { href: '/planning', label: 'Planificación', icon: BookOpen },
-  { href: '/grades', label: 'Notas', icon: GraduationCap },
   { href: '/pomodoro', label: 'Pomodoro', icon: Timer },
   { href: '/ai', label: 'Asistente IA', icon: Bot },
 ]
