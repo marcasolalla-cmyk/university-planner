@@ -77,7 +77,6 @@ export default function TasksClient({ tasks: initialTasks, subjects }: Props) {
 
   const pending = tasks.filter(t => !t.completed)
   const completed = tasks.filter(t => t.completed)
-
   const topTask = filter === 'pending' && sortMode === 'smart' && filtered[0]
 
   return (
@@ -299,14 +298,4 @@ function TaskForm({ task, subjects, onClose, onSaved }: { task: Task | null; sub
       </div>
     </div>
   )
-}
-
-function getDifficultyLabel(d: number) {
-  const labels = ['', 'Muy fácil', 'Fácil', 'Normal', 'Difícil', 'Muy difícil']
-  return labels[d] || 'Normal'
-}
-
-function getDifficultyColor(d: number) {
-  const colors = ['', 'text-green-400', 'text-blue-400', 'text-yellow-400', 'text-orange-400', 'text-red-400']
-  return colors[d] || 'text-yellow-400'
 }
