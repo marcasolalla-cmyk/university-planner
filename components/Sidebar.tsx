@@ -5,7 +5,7 @@ import { usePathname, useRouter } from 'next/navigation'
 import { useState } from 'react'
 import {
   LayoutDashboard, Calendar, CheckSquare, GraduationCap,
-  Timer, Bot, Sun, Moon, LogOut, Menu, X, BookOpen
+  Timer, Bot, Calculator, Sun, Moon, LogOut, Menu, X, BookOpen
 } from 'lucide-react'
 import { useTheme } from 'next-themes'
 import { createClient } from '@/lib/supabase'
@@ -18,6 +18,7 @@ const navItems = [
   { href: '/planning', label: 'Planificación', icon: BookOpen },
   { href: '/pomodoro', label: 'Pomodoro', icon: Timer },
   { href: '/ai', label: 'Asistente IA', icon: Bot },
+  { href: '/notacorte', label: 'Nota de corte', icon: Calculator },
 ]
 
 export default function Sidebar({ user }: { user: User }) {
