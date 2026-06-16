@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useRef, useCallback } from 'react'
-import { format, startOfMonth, endOfMonth, startOfWeek, endOfWeek, addDays, addMonths, subMonths, addWeeks, subWeeks, isSameDay, isSameMonth, parseISO, startOfDay, endOfDay } from 'date-fns'
+import { format, startOfMonth, endOfMonth, startOfWeek, endOfWeek, addDays, addMonths, subMonths, addWeeks, subWeeks, isSameDay, isSameMonth, parseISO } from 'date-fns'
 import { es } from 'date-fns/locale'
 import { ChevronLeft, ChevronRight, Plus, X, Download } from 'lucide-react'
 import { createClient } from '@/lib/supabase'
@@ -10,6 +10,8 @@ import { getEventTypeColor, getEventTypeLabel } from '@/lib/utils'
 
 interface Props { events: Event[]; subjects: Subject[] }
 type View = 'month' | 'week' | 'day'
+
+const COLORS = ['#6366f1','#ec4899','#f59e0b','#10b981','#3b82f6','#8b5cf6','#ef4444','#14b8a6','#f97316','#84cc16','#06b6d4','#a855f7','#fb7185','#fbbf24','#34d399']
 
 export default function CalendarClient({ events: initialEvents, subjects }: Props) {
   const [events, setEvents] = useState<Event[]>(initialEvents)
@@ -20,7 +22,6 @@ export default function CalendarClient({ events: initialEvents, subjects }: Prop
   const [editingEvent, setEditingEvent] = useState<Event | null>(null)
   const supabase = createClient()
 
-  // Drag to navigate
   const dragStart = useRef<number | null>(null)
   const isDragging = useRef(false)
 
@@ -29,36 +30,26 @@ export default function CalendarClient({ events: initialEvents, subjects }: Prop
   const handleMouseUp = (e: React.MouseEvent) => {
     if (dragStart.current === null) return
     const diff = e.clientX - dragStart.current
-    if (Math.abs(diff) > 50) {
-      if (diff < 0) navigateForward()
-      else navigateBack()
-    }
+    if (Math.abs(diff) > 50) { if (diff < 0) navigateForward(); else navigateBack() }
     dragStart.current = null
   }
-
   const handleTouchStart = (e: React.TouchEvent) => { dragStart.current = e.touches[0].clientX }
   const handleTouchEnd = (e: React.TouchEvent) => {
     if (dragStart.current === null) return
     const diff = e.changedTouches[0].clientX - dragStart.current
-    if (Math.abs(diff) > 50) {
-      if (diff < 0) navigateForward()
-      else navigateBack()
-    }
+    if (Math.abs(diff) > 50) { if (diff < 0) navigateForward(); else navigateBack() }
     dragStart.current = null
   }
 
   const handleWheel = (e: React.WheelEvent) => {
-    if (e.ctrlKey || e.metaKey) {
-      e.preventDefault()
-      if (e.deltaY < 0) {
-        // zoom in
-        if (view === 'month') setView('week')
-        else if (view === 'week') setView('day')
-      } else {
-        // zoom out
-        if (view === 'day') setView('week')
-        else if (view === 'week') setView('month')
-      }
+    if (e.target !== e.currentTarget && (e.target as HTMLElement).closest('.calendar-grid')) return
+    e.preventDefault()
+    if (e.deltaY < 0) {
+      if (view === 'month') setView('week')
+      else if (view === 'week') setView('day')
+    } else {
+      if (view === 'day') setView('week')
+      else if (view === 'week') setView('month')
     }
   }
 
@@ -67,7 +58,6 @@ export default function CalendarClient({ events: initialEvents, subjects }: Prop
     else if (view === 'week') setCurrentDate(d => addWeeks(d, 1))
     else setCurrentDate(d => addDays(d, 1))
   }
-
   const navigateBack = () => {
     if (view === 'month') setCurrentDate(d => subMonths(d, 1))
     else if (view === 'week') setCurrentDate(d => subWeeks(d, 1))
@@ -110,7 +100,6 @@ export default function CalendarClient({ events: initialEvents, subjects }: Prop
       onTouchEnd={handleTouchEnd}
       onWheel={handleWheel}
     >
-      {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div className="flex items-center gap-3">
           <button onClick={navigateBack} className="p-2 hover:bg-accent rounded-lg transition-colors"><ChevronLeft className="w-4 h-4" /></button>
@@ -131,10 +120,8 @@ export default function CalendarClient({ events: initialEvents, subjects }: Prop
         </div>
       </div>
 
-      {/* Hint */}
-      <p className="text-xs text-muted-foreground">💡 Arrastra para cambiar · Ctrl+Scroll para zoom</p>
+      <p className="text-xs text-muted-foreground">💡 Arrastra para cambiar · Scroll para zoom · Doble clic en un día para ver detalle</p>
 
-      {/* Legend */}
       <div className="flex flex-wrap gap-3">
         {[{ type: 'clase', label: 'Clase' }, { type: 'examen', label: 'Examen' }, { type: 'entrega', label: 'Entrega' }, { type: 'personal', label: 'Personal' }].map(({ type, label }) => (
           <div key={type} className="flex items-center gap-1.5 text-xs text-muted-foreground">
@@ -143,7 +130,6 @@ export default function CalendarClient({ events: initialEvents, subjects }: Prop
         ))}
       </div>
 
-      {/* Views */}
       {view === 'month' && <MonthView currentDate={currentDate} events={events} isDragging={isDragging} onDayClick={d => { if (!isDragging.current) { setSelectedDate(d); setEditingEvent(null); setShowForm(true) } }} onEventClick={(e, ev) => { ev.stopPropagation(); setEditingEvent(e); setShowForm(true) }} onDayZoom={d => { setCurrentDate(d); setView('week') }} />}
       {view === 'week' && <WeekView currentDate={currentDate} events={events} isDragging={isDragging} onDayClick={d => { if (!isDragging.current) { setSelectedDate(d); setEditingEvent(null); setShowForm(true) } }} onEventClick={(e, ev) => { ev.stopPropagation(); setEditingEvent(e); setShowForm(true) }} onDayZoom={d => { setCurrentDate(d); setView('day') }} />}
       {view === 'day' && <DayView currentDate={currentDate} events={events} onSlotClick={d => { setSelectedDate(d); setEditingEvent(null); setShowForm(true) }} onEventClick={(e, ev) => { ev.stopPropagation(); setEditingEvent(e); setShowForm(true) }} />}
@@ -151,6 +137,10 @@ export default function CalendarClient({ events: initialEvents, subjects }: Prop
       {showForm && <EventForm date={selectedDate || new Date()} event={editingEvent} subjects={subjects} onClose={() => setShowForm(false)} onSaved={refresh} />}
     </div>
   )
+}
+
+function getEventColor(event: Event): string | null {
+  return (event as any).color || event.subject?.color || null
 }
 
 function MonthView({ currentDate, events, isDragging, onDayClick, onEventClick, onDayZoom }: {
@@ -165,7 +155,7 @@ function MonthView({ currentDate, events, isDragging, onDayClick, onEventClick, 
   while (d <= end) { days.push(d); d = addDays(d, 1) }
 
   return (
-    <div className="card p-0 overflow-hidden">
+    <div className="card p-0 overflow-hidden calendar-grid">
       <div className="grid grid-cols-7 border-b border-border">
         {['Lun','Mar','Mié','Jue','Vie','Sáb','Dom'].map(day => (
           <div key={day} className="p-1.5 text-center text-xs font-medium text-muted-foreground">{day}</div>
@@ -181,9 +171,11 @@ function MonthView({ currentDate, events, isDragging, onDayClick, onEventClick, 
               <div className={`w-5 h-5 flex items-center justify-center text-xs font-medium rounded-full mb-0.5 ${isToday ? 'bg-primary text-white' : 'text-foreground'}`}>{format(day, 'd')}</div>
               <div className="space-y-0.5">
                 {dayEvents.slice(0, 2).map(event => {
-                  const color = (event as any).color || event.subject?.color
+                  const color = getEventColor(event)
                   return (
-                    <div key={event.id} onClick={ev => onEventClick(event, ev)} className={`text-xs px-1 py-0.5 rounded text-white truncate cursor-pointer hover:opacity-80 ${!color ? getEventTypeColor(event.type) : ''}`} style={color ? { backgroundColor: color } : {}}>
+                    <div key={event.id} onClick={ev => onEventClick(event, ev)}
+                      className={`text-xs px-1 py-0.5 rounded text-white truncate cursor-pointer hover:opacity-80 ${!color ? getEventTypeColor(event.type) : ''}`}
+                      style={color ? { backgroundColor: color } : {}}>
                       {event.title}
                     </div>
                   )
@@ -206,11 +198,12 @@ function WeekView({ currentDate, events, isDragging, onDayClick, onEventClick, o
   const weekStart = startOfWeek(currentDate, { weekStartsOn: 1 })
   const days = Array.from({ length: 7 }, (_, i) => addDays(weekStart, i))
   const hours = Array.from({ length: 24 }, (_, i) => i)
-  const HOUR_HEIGHT = 48
+  // Fit all 24 hours in viewport: calc available height divided by 24
+  const HOUR_HEIGHT = 36
 
   return (
-    <div className="card p-0 overflow-hidden">
-      <div className="grid grid-cols-8 border-b border-border">
+    <div className="card p-0 overflow-hidden calendar-grid" style={{ height: 'calc(100vh - 230px)' }}>
+      <div className="grid grid-cols-8 border-b border-border shrink-0">
         <div className="p-2" />
         {days.map((day, i) => {
           const isToday = isSameDay(day, new Date())
@@ -222,42 +215,39 @@ function WeekView({ currentDate, events, isDragging, onDayClick, onEventClick, o
           )
         })}
       </div>
-      <div className="overflow-y-auto" style={{ maxHeight: 'calc(100vh - 280px)' }}>
-        <div className="relative" style={{ height: HOUR_HEIGHT * 24 }}>
-          {/* Hour lines */}
-          {hours.map(hour => (
-            <div key={hour} className="absolute w-full flex" style={{ top: hour * HOUR_HEIGHT, height: HOUR_HEIGHT }}>
-              <div className="w-12 shrink-0 text-xs text-muted-foreground text-right pr-2 pt-1">{hour}:00</div>
-              <div className="flex-1 border-t border-border/50 grid grid-cols-7">
-                {days.map((_, i) => (
-                  <div key={i} onClick={() => { const d = new Date(days[i]); d.setHours(hour); if (!isDragging.current) onDayClick(d) }} className="border-l border-border/30 hover:bg-accent/10 cursor-pointer" />
-                ))}
-              </div>
+      <div className="relative overflow-hidden flex-1" style={{ height: `${HOUR_HEIGHT * 24}px` }}>
+        {hours.map(hour => (
+          <div key={hour} className="absolute w-full flex" style={{ top: hour * HOUR_HEIGHT, height: HOUR_HEIGHT }}>
+            <div className="w-12 shrink-0 text-xs text-muted-foreground text-right pr-2 pt-0.5" style={{ fontSize: '10px' }}>{hour}:00</div>
+            <div className="flex-1 border-t border-border/30 grid grid-cols-7">
+              {days.map((day, i) => (
+                <div key={i} onClick={() => { const d = new Date(day); d.setHours(hour); if (!isDragging.current) onDayClick(d) }} className="border-l border-border/30 hover:bg-accent/10 cursor-pointer" />
+              ))}
             </div>
-          ))}
-          {/* Events */}
-          {days.map((day, di) => {
-            const dayEvents = events.filter(e => isSameDay(parseISO(e.start_time), day))
-            return dayEvents.map(event => {
-              const start = parseISO(event.start_time)
-              const end = parseISO(event.end_time)
-              const topPx = (start.getHours() + start.getMinutes() / 60) * HOUR_HEIGHT
-              const heightPx = Math.max(((end.getHours() + end.getMinutes() / 60) - (start.getHours() + start.getMinutes() / 60)) * HOUR_HEIGHT, 20)
-              const color = (event as any).color || event.subject?.color
-              const left = `calc(${(di / 7) * 100}% + 48px)`
-              const width = `calc(${100 / 7}% - 4px)`
-              return (
-                <div key={event.id} onClick={ev => { ev.stopPropagation(); onEventClick(event, ev) }}
-                  className={`absolute rounded text-white text-xs px-1 py-0.5 cursor-pointer hover:opacity-80 overflow-hidden ${!color ? getEventTypeColor(event.type) : ''}`}
-                  style={{ top: topPx, height: heightPx, left, width, ...(color ? { backgroundColor: color } : {}) }}
-                >
-                  <div className="font-medium truncate">{event.title}</div>
-                  <div className="opacity-75">{format(start, 'HH:mm')}</div>
-                </div>
-              )
-            })
-          })}
-        </div>
+          </div>
+        ))}
+        {days.map((day, di) => {
+          const dayEvents = events.filter(e => isSameDay(parseISO(e.start_time), day))
+          return dayEvents.map(event => {
+            const start = parseISO(event.start_time)
+            const end = parseISO(event.end_time)
+            const startH = start.getHours() + start.getMinutes() / 60
+            const endH = end.getHours() + end.getMinutes() / 60
+            const topPx = startH * HOUR_HEIGHT
+            const heightPx = Math.max((endH - startH) * HOUR_HEIGHT, 18)
+            const color = getEventColor(event)
+            const colWidth = 100 / 7
+            return (
+              <div key={event.id} onClick={ev => { ev.stopPropagation(); onEventClick(event, ev) }}
+                className={`absolute rounded text-white text-xs px-1 py-0.5 cursor-pointer hover:opacity-80 overflow-hidden ${!color ? getEventTypeColor(event.type) : ''}`}
+                style={{ top: topPx, height: heightPx, left: `calc(${di * colWidth}% + 48px)`, width: `calc(${colWidth}% - 4px)`, ...(color ? { backgroundColor: color } : {}) }}
+              >
+                <div className="font-medium truncate" style={{ fontSize: '10px' }}>{event.title}</div>
+                {heightPx > 25 && <div className="opacity-75" style={{ fontSize: '9px' }}>{format(start, 'HH:mm')}</div>}
+              </div>
+            )
+          })
+        })}
       </div>
     </div>
   )
@@ -269,41 +259,65 @@ function DayView({ currentDate, events, onSlotClick, onEventClick }: {
 }) {
   const dayEvents = events.filter(e => isSameDay(parseISO(e.start_time), currentDate))
   const hours = Array.from({ length: 24 }, (_, i) => i)
-  const HOUR_HEIGHT = 60
+  const HOUR_HEIGHT = 40
 
   return (
-    <div className="card p-0 overflow-hidden">
-      <div className="p-3 border-b border-border">
-        <h2 className="font-semibold text-foreground capitalize">{format(currentDate, "EEEE, d 'de' MMMM", { locale: es })}</h2>
+    <div className="card p-0 overflow-hidden calendar-grid" style={{ height: 'calc(100vh - 230px)' }}>
+      <div className="p-3 border-b border-border shrink-0">
+        <h2 className="font-semibold text-foreground capitalize text-sm">{format(currentDate, "EEEE, d 'de' MMMM", { locale: es })}</h2>
         <p className="text-xs text-muted-foreground">{dayEvents.length} evento{dayEvents.length !== 1 ? 's' : ''}</p>
       </div>
-      <div className="overflow-y-auto" style={{ maxHeight: 'calc(100vh - 260px)' }}>
-        <div className="relative" style={{ height: HOUR_HEIGHT * 24 }}>
-          {hours.map(hour => (
-            <div key={hour} className="absolute w-full flex border-t border-border/30" style={{ top: hour * HOUR_HEIGHT, height: HOUR_HEIGHT }}>
-              <div className="w-14 shrink-0 text-xs text-muted-foreground text-right pr-2 pt-1">{hour.toString().padStart(2,'0')}:00</div>
-              <div onClick={() => { const d = new Date(currentDate); d.setHours(hour); onSlotClick(d) }} className="flex-1 hover:bg-accent/10 cursor-pointer border-l border-border/30" />
+      <div className="relative overflow-hidden" style={{ height: `${HOUR_HEIGHT * 24}px` }}>
+        {hours.map(hour => (
+          <div key={hour} className="absolute w-full flex border-t border-border/30" style={{ top: hour * HOUR_HEIGHT, height: HOUR_HEIGHT }}>
+            <div className="w-14 shrink-0 text-muted-foreground text-right pr-2 pt-0.5" style={{ fontSize: '10px' }}>{hour.toString().padStart(2,'0')}:00</div>
+            <div onClick={() => { const d = new Date(currentDate); d.setHours(hour); onSlotClick(d) }} className="flex-1 hover:bg-accent/10 cursor-pointer border-l border-border/30" />
+          </div>
+        ))}
+        {dayEvents.map(event => {
+          const start = parseISO(event.start_time)
+          const end = parseISO(event.end_time)
+          const startH = start.getHours() + start.getMinutes() / 60
+          const endH = end.getHours() + end.getMinutes() / 60
+          const topPx = startH * HOUR_HEIGHT
+          const heightPx = Math.max((endH - startH) * HOUR_HEIGHT, 24)
+          const color = getEventColor(event)
+          return (
+            <div key={event.id} onClick={ev => { ev.stopPropagation(); onEventClick(event, ev) }}
+              className={`absolute left-16 right-2 rounded-lg text-white px-2 py-1 cursor-pointer hover:opacity-80 overflow-hidden ${!color ? getEventTypeColor(event.type) : ''}`}
+              style={{ top: topPx, height: heightPx, ...(color ? { backgroundColor: color } : {}) }}
+            >
+              <div className="font-medium truncate" style={{ fontSize: '12px' }}>{event.title}</div>
+              {heightPx > 30 && <div className="opacity-75" style={{ fontSize: '10px' }}>{format(start, 'HH:mm')} – {format(end, 'HH:mm')}</div>}
+              {heightPx > 45 && event.location && <div className="opacity-75 truncate" style={{ fontSize: '10px' }}>📍 {event.location}</div>}
             </div>
-          ))}
-          {dayEvents.map(event => {
-            const start = parseISO(event.start_time)
-            const end = parseISO(event.end_time)
-            const topPx = (start.getHours() + start.getMinutes() / 60) * HOUR_HEIGHT
-            const heightPx = Math.max(((end.getHours() + end.getMinutes() / 60) - (start.getHours() + start.getMinutes() / 60)) * HOUR_HEIGHT, 30)
-            const color = (event as any).color || event.subject?.color
-            return (
-              <div key={event.id} onClick={ev => { ev.stopPropagation(); onEventClick(event, ev) }}
-                className={`absolute left-16 right-2 rounded-lg text-white px-2 py-1 cursor-pointer hover:opacity-80 overflow-hidden ${!color ? getEventTypeColor(event.type) : ''}`}
-                style={{ top: topPx, height: heightPx, ...(color ? { backgroundColor: color } : {}) }}
-              >
-                <div className="font-medium text-sm truncate">{event.title}</div>
-                <div className="text-xs opacity-75">{format(start, 'HH:mm')} – {format(end, 'HH:mm')}</div>
-                {event.location && <div className="text-xs opacity-75 truncate">📍 {event.location}</div>}
-              </div>
-            )
-          })}
-        </div>
+          )
+        })}
       </div>
+    </div>
+  )
+}
+
+function ColorPicker({ value, onChange }: { value: string; onChange: (c: string) => void }) {
+  const [open, setOpen] = useState(false)
+  return (
+    <div className="relative">
+      <div className="flex items-center gap-2">
+        <button onClick={() => setOpen(!open)} className="w-8 h-8 rounded-full border-2 border-border hover:scale-110 transition-transform" style={{ backgroundColor: value || '#6366f1' }} />
+        <span className="text-sm text-muted-foreground">Color del evento</span>
+        {value && <button onClick={() => onChange('')} className="text-xs text-muted-foreground hover:text-foreground">Quitar</button>}
+      </div>
+      {open && (
+        <div className="absolute top-10 left-0 bg-card border border-border rounded-xl p-3 z-10 shadow-lg">
+          <div className="flex flex-wrap gap-2 w-48">
+            {COLORS.map(c => (
+              <button key={c} onClick={() => { onChange(c); setOpen(false) }}
+                className={`w-7 h-7 rounded-full transition-transform hover:scale-110 ${value === c ? 'scale-125 ring-2 ring-white ring-offset-1 ring-offset-card' : ''}`}
+                style={{ backgroundColor: c }} />
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   )
 }
@@ -311,8 +325,6 @@ function DayView({ currentDate, events, onSlotClick, onEventClick }: {
 function EventForm({ date, event, subjects, onClose, onSaved }: { date: Date; event: Event | null; subjects: Subject[]; onClose: () => void; onSaved: () => void }) {
   const supabase = createClient()
   const [loading, setLoading] = useState(false)
-
-  const defaultColor = event ? ((event as any).color || event.subject?.color || '') : ''
   const [form, setForm] = useState({
     title: event?.title || '',
     description: event?.description || '',
@@ -325,10 +337,13 @@ function EventForm({ date, event, subjects, onClose, onSaved }: { date: Date; ev
     is_recurring: event?.is_recurring || false,
     notification_enabled: event?.notification_enabled ?? true,
     notification_minutes: event?.notification_minutes || 30,
-    color: defaultColor,
+    color: (event as any)?.color || event?.subject?.color || '',
   })
 
-  const COLORS = ['#6366f1','#ec4899','#f59e0b','#10b981','#3b82f6','#8b5cf6','#ef4444','#14b8a6','#f97316','#84cc16']
+  const handleSubjectChange = (subjectId: string) => {
+    const subject = subjects.find(s => s.id === subjectId)
+    setForm(f => ({ ...f, subject_id: subjectId, color: subject?.color || f.color }))
+  }
 
   const handleSubmit = async () => {
     if (!form.title) return
@@ -343,12 +358,6 @@ function EventForm({ date, event, subjects, onClose, onSaved }: { date: Date; ev
     if (!event || !confirm('¿Eliminar este evento?')) return
     await supabase.from('events').delete().eq('id', event.id)
     onSaved(); onClose()
-  }
-
-  // Auto-set color from subject
-  const handleSubjectChange = (subjectId: string) => {
-    const subject = subjects.find(s => s.id === subjectId)
-    setForm(f => ({ ...f, subject_id: subjectId, color: subject?.color || f.color }))
   }
 
   return (
@@ -382,15 +391,7 @@ function EventForm({ date, event, subjects, onClose, onSaved }: { date: Date; ev
               {subjects.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
             </select>
           </div>
-          <div>
-            <label className="label">Color del evento</label>
-            <div className="flex flex-wrap gap-2 mt-1">
-              {COLORS.map(c => (
-                <button key={c} onClick={() => setForm(f => ({ ...f, color: c }))} className={`w-7 h-7 rounded-full transition-transform ${form.color === c ? 'scale-125 ring-2 ring-white ring-offset-2 ring-offset-card' : 'hover:scale-110'}`} style={{ backgroundColor: c }} />
-              ))}
-              <button onClick={() => setForm(f => ({ ...f, color: '' }))} className={`w-7 h-7 rounded-full border-2 border-border text-xs text-muted-foreground flex items-center justify-center hover:border-primary ${!form.color ? 'ring-2 ring-white ring-offset-1 ring-offset-card' : ''}`}>✕</button>
-            </div>
-          </div>
+          <ColorPicker value={form.color} onChange={c => setForm(f => ({ ...f, color: c }))} />
           <div><label className="label">Aula / Lugar</label><input className="input" value={form.location} onChange={e => setForm(f => ({ ...f, location: e.target.value }))} placeholder="Aula 3B, Biblioteca..." /></div>
           <div><label className="label">Descripción</label><textarea className="input resize-none" rows={2} value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))} /></div>
           <div className="flex items-center gap-3 p-3 bg-secondary/50 rounded-lg">
@@ -418,4 +419,3 @@ function EventForm({ date, event, subjects, onClose, onSaved }: { date: Date; ev
     </div>
   )
 }
-
