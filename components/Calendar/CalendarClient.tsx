@@ -1,6 +1,7 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useCallback } from 'react'
+import { useRouter } from 'next/navigation'
 import { format, startOfMonth, endOfMonth, startOfWeek, endOfWeek, addDays, addMonths, subMonths, addWeeks, subWeeks, isSameDay, isSameMonth, parseISO } from 'date-fns'
 import { es } from 'date-fns/locale'
 import { ChevronLeft, ChevronRight, Plus, X, Download } from 'lucide-react'
@@ -19,14 +20,16 @@ export default function CalendarClient({ events: initialEvents, subjects }: Prop
   const [selectedDate, setSelectedDate] = useState<Date | null>(null)
   const [editingEvent, setEditingEvent] = useState<Event | null>(null)
   const supabase = createClient()
+  const router = useRouter()
 
-  const refresh = async () => {
+  const refresh = useCallback(async () => {
     const now = currentDate
     const start = new Date(now.getFullYear(), now.getMonth() - 1, 1).toISOString()
     const end = new Date(now.getFullYear(), now.getMonth() + 3, 0).toISOString()
     const { data } = await supabase.from('events').select('*, subject:subjects(*)').gte('start_time', start).lte('start_time', end).order('start_time')
     if (data) setEvents(data)
-  }
+    router.refresh()
+  }, [currentDate, supabase, router])
 
   const exportICS = () => {
     const lines = ['BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//UniPlanner//ES', 'CALSCALE:GREGORIAN']
