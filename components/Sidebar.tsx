@@ -5,7 +5,7 @@ import { usePathname, useRouter } from 'next/navigation'
 import { useState } from 'react'
 import {
   LayoutDashboard, Calendar, CheckSquare, GraduationCap,
-  Timer, Bot, Calculator, GraduationCap, Sun, Moon, LogOut, Menu, X, BookOpen
+  Timer, Bot, Sun, Moon, LogOut, Menu, X, BookOpen, Calculator
 } from 'lucide-react'
 import { useTheme } from 'next-themes'
 import { createClient } from '@/lib/supabase'
