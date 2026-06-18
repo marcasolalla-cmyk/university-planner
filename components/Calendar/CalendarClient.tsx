@@ -209,15 +209,16 @@ function WeekView({ currentDate, events, isDragging, onDayClick, onEventClick, o
   const days = Array.from({ length: 7 }, (_, i) => addDays(weekStart, i))
   const hours = Array.from({ length: 24 }, (_, i) => i)
   const HOUR_HEIGHT = 56
-  const HOUR_COL_WIDTH = 48
+  const gridTemplate = '48px repeat(7, 1fr)'
 
   return (
     <div className="card p-0 overflow-hidden">
-      <div className="flex border-b border-border" style={{ paddingLeft: `${HOUR_COL_WIDTH}px` }}>
+      <div className="grid border-b border-border" style={{ gridTemplateColumns: gridTemplate }}>
+        <div />
         {days.map((day, i) => {
           const isToday = isSameDay(day, new Date())
           return (
-            <div key={i} onDoubleClick={() => onDayClick2(day)} className="flex-1 p-1.5 text-center border-l border-border cursor-pointer hover:bg-accent/30" style={{ boxSizing: "border-box" }}>
+            <div key={i} onDoubleClick={() => onDayClick2(day)} className="p-1.5 text-center border-l border-border cursor-pointer hover:bg-accent/30">
               <div className="text-xs text-muted-foreground capitalize">{format(day, 'EEE', { locale: es })}</div>
               <div className={`text-sm font-medium mt-0.5 w-6 h-6 flex items-center justify-center rounded-full mx-auto ${isToday ? 'bg-primary text-white' : 'text-foreground'}`}>{format(day, 'd')}</div>
             </div>
@@ -227,42 +228,41 @@ function WeekView({ currentDate, events, isDragging, onDayClick, onEventClick, o
       <div className="overflow-y-auto" style={{ maxHeight: 'calc(100vh - 260px)' }}>
         <div className="relative" style={{ height: HOUR_HEIGHT * 24 }}>
           {hours.map(hour => (
-            <div key={hour} className="absolute w-full flex border-t border-border/30" style={{ top: hour * HOUR_HEIGHT, height: HOUR_HEIGHT }}>
-              <div className="shrink-0 text-xs text-muted-foreground text-right pr-2 pt-1" style={{ width: HOUR_COL_WIDTH }}>{hour}:00</div>
-              <div className="flex-1 grid grid-cols-7 h-full" style={{ marginLeft: 0 }}>
-                {days.map((day, i) => (
-                  <div key={i} onClick={() => { const d = new Date(day); d.setHours(hour); if (!isDragging.current) onDayClick(d) }} className="border-l border-border/30 hover:bg-accent/10 cursor-pointer h-full" />
-                ))}
-              </div>
+            <div key={hour} className="absolute grid w-full border-t border-border/30" style={{ top: hour * HOUR_HEIGHT, height: HOUR_HEIGHT, gridTemplateColumns: gridTemplate }}>
+              <div className="text-xs text-muted-foreground text-right pr-2 pt-1">{hour}:00</div>
+              {days.map((day, i) => (
+                <div key={i} onClick={() => { const d = new Date(day); d.setHours(hour); if (!isDragging.current) onDayClick(d) }} className="border-l border-border/30 hover:bg-accent/10 cursor-pointer h-full" />
+              ))}
             </div>
           ))}
-          {days.map((day, di) => {
-            const dayEvents = events.filter(e => isSameDay(parseISO(e.start_time), day))
-            return dayEvents.map(event => {
-              const start = parseISO(event.start_time)
-              const end = parseISO(event.end_time)
-              const startH = start.getHours() + start.getMinutes() / 60
-              const endH = Math.min(end.getHours() + end.getMinutes() / 60, 24)
-              const topPx = startH * HOUR_HEIGHT
-              const heightPx = Math.max((endH - startH) * HOUR_HEIGHT, 20)
-              const color = getEventColor(event)
+          <div className="absolute inset-0 grid pointer-events-none" style={{ gridTemplateColumns: gridTemplate }}>
+            <div />
+            {days.map((day, di) => {
+              const dayEvents = events.filter(e => isSameDay(parseISO(e.start_time), day))
               return (
-                <div key={event.id} onClick={ev => { ev.stopPropagation(); onEventClick(event, ev) }}
-                  className={`absolute rounded text-white text-xs px-1 py-0.5 cursor-pointer hover:opacity-80 overflow-hidden ${!color ? getEventTypeColor(event.type) : ''}`}
-                  style={{
-                    top: topPx,
-                    height: heightPx,
-                    left: `calc(${HOUR_COL_WIDTH}px + ${di} * ((100% - ${HOUR_COL_WIDTH}px) / 7) + 1px)`,
-                    width: `calc((100% - ${HOUR_COL_WIDTH}px) / 7)`,
-                    ...(color ? { backgroundColor: color } : {})
-                  }}
-                >
-                  <div className="font-medium truncate" style={{ fontSize: '10px' }}>{event.title}</div>
-                  {heightPx > 30 && <div className="opacity-75" style={{ fontSize: '9px' }}>{format(start, 'HH:mm')} – {format(end, 'HH:mm')}</div>}
+                <div key={di} className="relative pointer-events-none">
+                  {dayEvents.map(event => {
+                    const start = parseISO(event.start_time)
+                    const end = parseISO(event.end_time)
+                    const startH = start.getHours() + start.getMinutes() / 60
+                    const endH = Math.min(end.getHours() + end.getMinutes() / 60, 24)
+                    const topPx = startH * HOUR_HEIGHT
+                    const heightPx = Math.max((endH - startH) * HOUR_HEIGHT, 20)
+                    const color = getEventColor(event)
+                    return (
+                      <div key={event.id} onClick={ev => { ev.stopPropagation(); onEventClick(event, ev) }}
+                        className={`absolute rounded text-white text-xs px-1 py-0.5 cursor-pointer hover:opacity-80 overflow-hidden pointer-events-auto left-0 right-0 mx-px ${!color ? getEventTypeColor(event.type) : ''}`}
+                        style={{ top: topPx, height: heightPx, ...(color ? { backgroundColor: color } : {}) }}
+                      >
+                        <div className="font-medium truncate" style={{ fontSize: '10px' }}>{event.title}</div>
+                        {heightPx > 30 && <div className="opacity-75" style={{ fontSize: '9px' }}>{format(start, 'HH:mm')} – {format(end, 'HH:mm')}</div>}
+                      </div>
+                    )
+                  })}
                 </div>
               )
-            })
-          })}
+            })}
+          </div>
         </div>
       </div>
     </div>
