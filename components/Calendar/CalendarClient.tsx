@@ -5,10 +5,10 @@ import { format, startOfMonth, endOfMonth, startOfWeek, endOfWeek, addDays, addM
 import { es } from 'date-fns/locale'
 import { ChevronLeft, ChevronRight, Plus, X, Download } from 'lucide-react'
 import { createClient } from '@/lib/supabase'
-import type { Event, Subject } from '@/lib/types'
+import type { Event, Subject, Task } from '@/lib/types'
 import { getEventTypeColor, getEventTypeColorHex } from '@/lib/utils'
 
-interface Props { events: Event[]; subjects: Subject[] }
+interface Props { events: Event[]; subjects: Subject[]; tasks: Task[] }
 type View = 'month' | 'week' | 'day'
 
 const COLORS = ['#6366f1','#ec4899','#f59e0b','#10b981','#3b82f6','#8b5cf6','#ef4444','#14b8a6','#f97316','#84cc16','#06b6d4','#a855f7','#fb7185','#fbbf24','#34d399']
@@ -17,7 +17,7 @@ function getEventColor(event: Event): string {
   return (event as any).color || event.subject?.color || getEventTypeColorHex(event.type)
 }
 
-export default function CalendarClient({ events: initialEvents, subjects }: Props) {
+export default function CalendarClient({ events: initialEvents, subjects, tasks }: Props) {
   const [events, setEvents] = useState<Event[]>(initialEvents)
   const [currentDate, setCurrentDate] = useState(new Date())
   const [view, setView] = useState<View>('month')
@@ -144,8 +144,8 @@ export default function CalendarClient({ events: initialEvents, subjects }: Prop
 
       <div className={slideClass}>
         {view === 'month' && <MonthView currentDate={currentDate} events={events} isDragging={isDragging} onDayClick={d => { if (!isDragging.current) { setSelectedDate(d); setEditingEvent(null); setShowForm(true) } }} onEventClick={(e, ev) => { ev.stopPropagation(); setEditingEvent(e); setShowForm(true) }} />}
-        {view === 'week' && <WeekView currentDate={currentDate} events={events} isDragging={isDragging} onDayClick={d => { if (!isDragging.current) { setSelectedDate(d); setEditingEvent(null); setShowForm(true) } }} onEventClick={(e, ev) => { ev.stopPropagation(); setEditingEvent(e); setShowForm(true) }} onDayClick2={d => { setCurrentDate(d); setView('day') }} />}
-        {view === 'day' && <DayView currentDate={currentDate} events={events} onSlotClick={d => { setSelectedDate(d); setEditingEvent(null); setShowForm(true) }} onEventClick={(e, ev) => { ev.stopPropagation(); setEditingEvent(e); setShowForm(true) }} />}
+        {view === 'week' && <WeekView currentDate={currentDate} events={events} tasks={tasks} isDragging={isDragging} onDayClick={d => { if (!isDragging.current) { setSelectedDate(d); setEditingEvent(null); setShowForm(true) } }} onEventClick={(e, ev) => { ev.stopPropagation(); setEditingEvent(e); setShowForm(true) }} onDayClick2={d => { setCurrentDate(d); setView('day') }} />}
+        {view === 'day' && <DayView currentDate={currentDate} events={events} tasks={tasks} onSlotClick={d => { setSelectedDate(d); setEditingEvent(null); setShowForm(true) }} onEventClick={(e, ev) => { ev.stopPropagation(); setEditingEvent(e); setShowForm(true) }} />}
       </div>
 
       {showForm && <EventForm date={selectedDate || new Date()} event={editingEvent} subjects={subjects} onClose={() => setShowForm(false)} onSaved={refresh} />}
@@ -200,8 +200,8 @@ function MonthView({ currentDate, events, isDragging, onDayClick, onEventClick }
   )
 }
 
-function WeekView({ currentDate, events, isDragging, onDayClick, onEventClick, onDayClick2 }: {
-  currentDate: Date; events: Event[]
+function WeekView({ currentDate, events, tasks, isDragging, onDayClick, onEventClick, onDayClick2 }: {
+  currentDate: Date; events: Event[]; tasks: Task[]
   isDragging: React.MutableRefObject<boolean>
   onDayClick: (d: Date) => void; onEventClick: (e: Event, ev: React.MouseEvent) => void; onDayClick2: (d: Date) => void
 }) {
@@ -235,7 +235,7 @@ function WeekView({ currentDate, events, isDragging, onDayClick, onEventClick, o
         <div style={{ display: "grid", gridTemplateColumns: "48px repeat(7, 1fr)", gridTemplateRows: `repeat(24, ${HOUR_HEIGHT}px)`, height: containerHeight }}>
           {hours.map(hour => (
             <div key={`label-${hour}`} className="text-xs text-muted-foreground text-right pr-2 pt-1 border-t border-border/30" style={{ gridColumn: 1, gridRow: hour + 1 }}>
-              {hour}:00
+              {hour % 2 === 0 ? `${hour}:00` : ''}
             </div>
           ))}
           {days.map((day, di) =>
@@ -283,8 +283,8 @@ function WeekView({ currentDate, events, isDragging, onDayClick, onEventClick, o
   )
 }
 
-function DayView({ currentDate, events, onSlotClick, onEventClick }: {
-  currentDate: Date; events: Event[]
+function DayView({ currentDate, events, tasks, onSlotClick, onEventClick }: {
+  currentDate: Date; events: Event[]; tasks: Task[]
   onSlotClick: (d: Date) => void; onEventClick: (e: Event, ev: React.MouseEvent) => void
 }) {
   const dayEvents = events.filter(e => isSameDay(parseISO(e.start_time), currentDate))
@@ -308,7 +308,7 @@ function DayView({ currentDate, events, onSlotClick, onEventClick }: {
         <div className="relative" style={{ height: containerHeight }}>
           {hours.map(hour => (
             <div key={hour} className="absolute w-full flex border-t border-border/30" style={{ top: hour * HOUR_HEIGHT, height: HOUR_HEIGHT }}>
-              <div className="w-14 shrink-0 text-muted-foreground text-right pr-2 pt-1" style={{ fontSize: '11px' }}>{hour.toString().padStart(2,'0')}:00</div>
+              <div className="w-14 shrink-0 text-muted-foreground text-right pr-2 pt-1" style={{ fontSize: '11px' }}>{hour % 2 === 0 ? `${hour.toString().padStart(2,'0')}:00` : ''}</div>
               <div onClick={() => { const d = new Date(currentDate); d.setHours(hour); onSlotClick(d) }} className="flex-1 hover:bg-accent/10 cursor-pointer border-l border-border/30" />
             </div>
           ))}
@@ -329,6 +329,18 @@ function DayView({ currentDate, events, onSlotClick, onEventClick }: {
                 {heightPx > 35 && <div className="opacity-75 text-xs">{format(start, 'HH:mm')} – {format(end, 'HH:mm')}</div>}
                 {heightPx > 52 && event.location && <div className="opacity-75 text-xs truncate">📍 {event.location}</div>}
               </div>
+            )
+          })}
+          {tasks.filter(t => t.due_date && isSameDay(parseISO(t.due_date), currentDate)).map(task => {
+            const due = parseISO(task.due_date!)
+            const dueH = due.getHours() + due.getMinutes() / 60
+            const topPx = dueH * HOUR_HEIGHT
+            const taskColor = task.subject?.color || '#000000'
+            return (
+              <div key={task.id} title={task.title}
+                className="absolute left-14 right-2 z-20"
+                style={{ top: topPx - 1, height: 3, backgroundColor: taskColor, opacity: 0.85, borderRadius: 2 }}
+              />
             )
           })}
         </div>
