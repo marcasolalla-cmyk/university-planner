@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useRef, useCallback } from 'react'
+import { useState, useRef, useCallback, useEffect } from 'react'
 import { format, startOfMonth, endOfMonth, startOfWeek, endOfWeek, addDays, addMonths, subMonths, addWeeks, subWeeks, isSameDay, isSameMonth, parseISO } from 'date-fns'
 import { es } from 'date-fns/locale'
 import { ChevronLeft, ChevronRight, Plus, X, Download } from 'lucide-react'
@@ -208,7 +208,14 @@ function WeekView({ currentDate, events, isDragging, onDayClick, onEventClick, o
   const weekStart = startOfWeek(currentDate, { weekStartsOn: 1 })
   const days = Array.from({ length: 7 }, (_, i) => addDays(weekStart, i))
   const hours = Array.from({ length: 24 }, (_, i) => i)
-  const HOUR_HEIGHT = 56
+  const [containerHeight, setContainerHeight] = useState(700)
+  useEffect(() => {
+    const update = () => setContainerHeight(window.innerHeight - 260)
+    update()
+    window.addEventListener('resize', update)
+    return () => window.removeEventListener('resize', update)
+  }, [])
+  const HOUR_HEIGHT = containerHeight / 24
 
   return (
     <div className="card p-0 overflow-hidden">
@@ -224,8 +231,8 @@ function WeekView({ currentDate, events, isDragging, onDayClick, onEventClick, o
           )
         })}
       </div>
-      <div className="overflow-y-auto" style={{ maxHeight: 'calc(100vh - 260px)' }}>
-        <div style={{ display: "grid", gridTemplateColumns: "48px repeat(7, 1fr)", gridTemplateRows: `repeat(24, ${HOUR_HEIGHT}px)` }}>
+      <div style={{ height: containerHeight }}>
+        <div style={{ display: "grid", gridTemplateColumns: "48px repeat(7, 1fr)", gridTemplateRows: `repeat(24, ${HOUR_HEIGHT}px)`, height: containerHeight }}>
           {hours.map(hour => (
             <div key={`label-${hour}`} className="text-xs text-muted-foreground text-right pr-2 pt-1 border-t border-border/30" style={{ gridColumn: 1, gridRow: hour + 1 }}>
               {hour}:00
@@ -282,7 +289,14 @@ function DayView({ currentDate, events, onSlotClick, onEventClick }: {
 }) {
   const dayEvents = events.filter(e => isSameDay(parseISO(e.start_time), currentDate))
   const hours = Array.from({ length: 24 }, (_, i) => i)
-  const HOUR_HEIGHT = 64
+  const [containerHeight, setContainerHeight] = useState(700)
+  useEffect(() => {
+    const update = () => setContainerHeight(window.innerHeight - 320)
+    update()
+    window.addEventListener('resize', update)
+    return () => window.removeEventListener('resize', update)
+  }, [])
+  const HOUR_HEIGHT = containerHeight / 24
 
   return (
     <div className="card p-0 overflow-hidden">
@@ -290,8 +304,8 @@ function DayView({ currentDate, events, onSlotClick, onEventClick }: {
         <h2 className="font-semibold text-foreground capitalize text-sm">{format(currentDate, "EEEE, d 'de' MMMM", { locale: es })}</h2>
         <p className="text-xs text-muted-foreground">{dayEvents.length} evento{dayEvents.length !== 1 ? 's' : ''}</p>
       </div>
-      <div className="overflow-y-auto" style={{ maxHeight: 'calc(100vh - 260px)' }}>
-        <div className="relative" style={{ height: HOUR_HEIGHT * 24 }}>
+      <div style={{ height: containerHeight }}>
+        <div className="relative" style={{ height: containerHeight }}>
           {hours.map(hour => (
             <div key={hour} className="absolute w-full flex border-t border-border/30" style={{ top: hour * HOUR_HEIGHT, height: HOUR_HEIGHT }}>
               <div className="w-14 shrink-0 text-muted-foreground text-right pr-2 pt-1" style={{ fontSize: '11px' }}>{hour.toString().padStart(2,'0')}:00</div>
