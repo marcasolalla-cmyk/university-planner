@@ -40,3 +40,13 @@ export function getEventTypeLabel(type: string): string {
     default: return type
   }
 }
+
+export function getEventTypeColorHex(type: string): string {
+  switch (type) {
+    case 'examen': return '#ef4444'
+    case 'entrega': return '#f97316'
+    case 'clase': return '#3b82f6'
+    case 'personal': return '#a855f7'
+    default: return '#6b7280'
+  }
+}

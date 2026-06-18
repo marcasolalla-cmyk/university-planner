@@ -6,15 +6,15 @@ import { es } from 'date-fns/locale'
 import { ChevronLeft, ChevronRight, Plus, X, Download } from 'lucide-react'
 import { createClient } from '@/lib/supabase'
 import type { Event, Subject } from '@/lib/types'
-import { getEventTypeColor } from '@/lib/utils'
+import { getEventTypeColor, getEventTypeColorHex } from '@/lib/utils'
 
 interface Props { events: Event[]; subjects: Subject[] }
 type View = 'month' | 'week' | 'day'
 
 const COLORS = ['#6366f1','#ec4899','#f59e0b','#10b981','#3b82f6','#8b5cf6','#ef4444','#14b8a6','#f97316','#84cc16','#06b6d4','#a855f7','#fb7185','#fbbf24','#34d399']
 
-function getEventColor(event: Event): string | null {
-  return (event as any).color || event.subject?.color || null
+function getEventColor(event: Event): string {
+  return (event as any).color || event.subject?.color || getEventTypeColorHex(event.type)
 }
 
 export default function CalendarClient({ events: initialEvents, subjects }: Props) {
@@ -184,7 +184,7 @@ function MonthView({ currentDate, events, isDragging, onDayClick, onEventClick }
                   const color = getEventColor(event)
                   return (
                     <div key={event.id} onClick={ev => onEventClick(event, ev)}
-                      className={`text-xs px-1 py-0.5 rounded text-white truncate cursor-pointer hover:opacity-80 ${!color ? getEventTypeColor(event.type) : ''}`}
+                      className={`text-xs px-1 py-0.5 rounded text-white truncate cursor-pointer hover:opacity-80 ''`}
                       style={color ? { backgroundColor: color } : {}}>
                       {event.title}
                     </div>
@@ -262,7 +262,7 @@ function WeekView({ currentDate, events, isDragging, onDayClick, onEventClick, o
               const offsetBottom = (Math.ceil(endH) - endH) * HOUR_HEIGHT
               return (
                 <div key={event.id} onClick={ev => { ev.stopPropagation(); onEventClick(event, ev) }}
-                  className={`rounded text-white text-xs px-1 py-0.5 cursor-pointer hover:opacity-80 overflow-hidden m-px relative z-10 ${!color ? getEventTypeColor(event.type) : ''}`}
+                  className={`rounded text-white text-xs px-1 py-0.5 cursor-pointer hover:opacity-80 overflow-hidden m-px relative z-10 ''`}
                   style={{
                     gridColumn: di + 2,
                     gridRow: `${startRow} / ${endRow}`,
@@ -322,7 +322,7 @@ function DayView({ currentDate, events, onSlotClick, onEventClick }: {
             const color = getEventColor(event)
             return (
               <div key={event.id} onClick={ev => { ev.stopPropagation(); onEventClick(event, ev) }}
-                className={`absolute left-16 right-2 rounded-lg text-white px-2 py-1 cursor-pointer hover:opacity-80 overflow-hidden ${!color ? getEventTypeColor(event.type) : ''}`}
+                className={`absolute left-16 right-2 rounded-lg text-white px-2 py-1 cursor-pointer hover:opacity-80 overflow-hidden ''`}
                 style={{ top: topPx, height: heightPx, ...(color ? { backgroundColor: color } : {}) }}
               >
                 <div className="font-medium truncate text-sm">{event.title}</div>
