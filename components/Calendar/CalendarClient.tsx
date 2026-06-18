@@ -209,11 +209,10 @@ function WeekView({ currentDate, events, isDragging, onDayClick, onEventClick, o
   const days = Array.from({ length: 7 }, (_, i) => addDays(weekStart, i))
   const hours = Array.from({ length: 24 }, (_, i) => i)
   const HOUR_HEIGHT = 56
-  const gridTemplate = '48px repeat(7, 1fr)'
 
   return (
     <div className="card p-0 overflow-hidden">
-      <div className="grid border-b border-border" style={{ gridTemplateColumns: gridTemplate }}>
+      <div className="grid grid-cols-[48px_repeat(7,1fr)] border-b border-border">
         <div />
         {days.map((day, i) => {
           const isToday = isSameDay(day, new Date())
@@ -226,43 +225,51 @@ function WeekView({ currentDate, events, isDragging, onDayClick, onEventClick, o
         })}
       </div>
       <div className="overflow-y-auto" style={{ maxHeight: 'calc(100vh - 260px)' }}>
-        <div className="relative" style={{ height: HOUR_HEIGHT * 24 }}>
+        <div className="grid grid-cols-[48px_repeat(7,1fr)]" style={{ gridTemplateRows: `repeat(24, ${HOUR_HEIGHT}px)` }}>
           {hours.map(hour => (
-            <div key={hour} className="absolute grid w-full border-t border-border/30" style={{ top: hour * HOUR_HEIGHT, height: HOUR_HEIGHT, gridTemplateColumns: gridTemplate }}>
-              <div className="text-xs text-muted-foreground text-right pr-2 pt-1">{hour}:00</div>
-              {days.map((day, i) => (
-                <div key={i} onClick={() => { const d = new Date(day); d.setHours(hour); if (!isDragging.current) onDayClick(d) }} className="border-l border-border/30 hover:bg-accent/10 cursor-pointer h-full" />
-              ))}
+            <div key={`label-${hour}`} className="text-xs text-muted-foreground text-right pr-2 pt-1 border-t border-border/30" style={{ gridColumn: 1, gridRow: hour + 1 }}>
+              {hour}:00
             </div>
           ))}
-          <div className="absolute inset-0 grid pointer-events-none" style={{ gridTemplateColumns: gridTemplate }}>
-            <div />
-            {days.map((day, di) => {
-              const dayEvents = events.filter(e => isSameDay(parseISO(e.start_time), day))
+          {days.map((day, di) =>
+            hours.map(hour => (
+              <div
+                key={`cell-${di}-${hour}`}
+                onClick={() => { const d = new Date(day); d.setHours(hour); if (!isDragging.current) onDayClick(d) }}
+                className="border-l border-t border-border/30 hover:bg-accent/10 cursor-pointer relative"
+                style={{ gridColumn: di + 2, gridRow: hour + 1 }}
+              />
+            ))
+          )}
+          {days.map((day, di) => {
+            const dayEvents = events.filter(e => isSameDay(parseISO(e.start_time), day))
+            return dayEvents.map(event => {
+              const start = parseISO(event.start_time)
+              const end = parseISO(event.end_time)
+              const startH = start.getHours() + start.getMinutes() / 60
+              const endH = Math.min(end.getHours() + end.getMinutes() / 60, 24)
+              const color = getEventColor(event)
+              const startRow = Math.floor(startH) + 1
+              const endRow = Math.ceil(endH) + 1
+              const offsetTop = (startH - Math.floor(startH)) * HOUR_HEIGHT
+              const offsetBottom = (Math.ceil(endH) - endH) * HOUR_HEIGHT
               return (
-                <div key={di} className="relative pointer-events-none">
-                  {dayEvents.map(event => {
-                    const start = parseISO(event.start_time)
-                    const end = parseISO(event.end_time)
-                    const startH = start.getHours() + start.getMinutes() / 60
-                    const endH = Math.min(end.getHours() + end.getMinutes() / 60, 24)
-                    const topPx = startH * HOUR_HEIGHT
-                    const heightPx = Math.max((endH - startH) * HOUR_HEIGHT, 20)
-                    const color = getEventColor(event)
-                    return (
-                      <div key={event.id} onClick={ev => { ev.stopPropagation(); onEventClick(event, ev) }}
-                        className={`absolute rounded text-white text-xs px-1 py-0.5 cursor-pointer hover:opacity-80 overflow-hidden pointer-events-auto left-0 right-0 mx-px ${!color ? getEventTypeColor(event.type) : ''}`}
-                        style={{ top: topPx, height: heightPx, ...(color ? { backgroundColor: color } : {}) }}
-                      >
-                        <div className="font-medium truncate" style={{ fontSize: '10px' }}>{event.title}</div>
-                        {heightPx > 30 && <div className="opacity-75" style={{ fontSize: '9px' }}>{format(start, 'HH:mm')} – {format(end, 'HH:mm')}</div>}
-                      </div>
-                    )
-                  })}
+                <div key={event.id} onClick={ev => { ev.stopPropagation(); onEventClick(event, ev) }}
+                  className={`rounded text-white text-xs px-1 py-0.5 cursor-pointer hover:opacity-80 overflow-hidden m-px relative z-10 ${!color ? getEventTypeColor(event.type) : ''}`}
+                  style={{
+                    gridColumn: di + 2,
+                    gridRow: `${startRow} / ${endRow}`,
+                    marginTop: offsetTop,
+                    marginBottom: offsetBottom,
+                    ...(color ? { backgroundColor: color } : {})
+                  }}
+                >
+                  <div className="font-medium truncate" style={{ fontSize: '10px' }}>{event.title}</div>
+                  <div className="opacity-75" style={{ fontSize: '9px' }}>{format(start, 'HH:mm')} – {format(end, 'HH:mm')}</div>
                 </div>
               )
-            })}
-          </div>
+            })
+          })}
         </div>
       </div>
     </div>
