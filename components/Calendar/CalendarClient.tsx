@@ -212,7 +212,7 @@ function WeekView({ currentDate, events, isDragging, onDayClick, onEventClick, o
 
   return (
     <div className="card p-0 overflow-hidden">
-      <div className="grid grid-cols-[48px_repeat(7,1fr)] border-b border-border">
+      <div className="border-b border-border" style={{ display: "grid", gridTemplateColumns: "48px repeat(7, 1fr)" }}>
         <div />
         {days.map((day, i) => {
           const isToday = isSameDay(day, new Date())
@@ -225,7 +225,7 @@ function WeekView({ currentDate, events, isDragging, onDayClick, onEventClick, o
         })}
       </div>
       <div className="overflow-y-auto" style={{ maxHeight: 'calc(100vh - 260px)' }}>
-        <div className="grid grid-cols-[48px_repeat(7,1fr)]" style={{ gridTemplateRows: `repeat(24, ${HOUR_HEIGHT}px)` }}>
+        <div style={{ display: "grid", gridTemplateColumns: "48px repeat(7, 1fr)", gridTemplateRows: `repeat(24, ${HOUR_HEIGHT}px)` }}>
           {hours.map(hour => (
             <div key={`label-${hour}`} className="text-xs text-muted-foreground text-right pr-2 pt-1 border-t border-border/30" style={{ gridColumn: 1, gridRow: hour + 1 }}>
               {hour}:00
